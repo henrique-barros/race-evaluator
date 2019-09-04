@@ -1,0 +1,17 @@
+{
+  "name": "gympass-teste",
+  "version": "1.0.0",
+  "description": "",
+  "main": "race_evaluator.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "babel-node race_evaluator.js input" 
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1"
+  }
+}
