@@ -15,7 +15,8 @@ export const raceService = () => {
     let lapEllapsedTime = lapStringArray[5];
     let avgSpeed = lapStringArray[6];
 
-    raceRepositoryInstance.saveLap(timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed);
+    let lap = raceRepositoryInstance.saveLap(timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed);
+    raceRepositoryInstance.saveLapToPilot(lap, lap.racerId, lap.racerName);
   }
 
   const getAllLaps = () => {
@@ -27,8 +28,12 @@ export const raceService = () => {
     lapStrings.slice(1).map((lapString) => saveLapBasedOnString(lapString));
   }
 
+  const getAllRaceInfoFromPilots = () => {};
+
   return {
     getAllLaps,
-    readAndParseLapsDataFromFile
+    readAndParseLapsDataFromFile,
+    getAllRaceInfoFromPilots,
+    getAllLapsByPilots: raceRepositoryInstance.getLapsByPilot
   }
 }
