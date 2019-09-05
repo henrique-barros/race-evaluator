@@ -1,6 +1,15 @@
+export const raceRepository = () => {
+  let laps = [];
 
-
-// TODO build a JSON file from input and save the file locally
-
-
-
+  return {
+    saveLap: (timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed) => {
+      const lap = {
+        timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed
+      }
+      laps.push(lap);
+    },
+    getLaps: () => {
+      return laps;
+    }
+  }
+}

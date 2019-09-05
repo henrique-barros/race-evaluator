@@ -1,11 +1,14 @@
-import { getRaceInfo, getLaps } from "./services/file_service";
+import { raceService } from "./services/race_service";
 
 async function main() {
+  const raceServiceInstance = raceService();
+
   const filename = process.argv.slice(2)[0];
 
-  const laps = await getLaps(filename);
+  await raceServiceInstance.readAndParseLapsDataFromFile(filename);
 
-  console.log(laps);
+
+  console.log(raceServiceInstance.getAllLaps());
 }
 
 main();
