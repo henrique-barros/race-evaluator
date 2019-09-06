@@ -1,7 +1,7 @@
 export const raceRepository = () => {
   let laps = [];
 
-  let lapsByPilot = {};
+  let lapsByPilot = [];
 
   return {
     saveLap: (timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed) => {

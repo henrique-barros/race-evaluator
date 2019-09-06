@@ -7,7 +7,7 @@ async function main() {
 
   await raceServiceInstance.readAndParseLapsDataFromFile(filename);
 
-  console.log(raceServiceInstance.getAllLapsByPilots());
+  console.log(raceServiceInstance.getRaceResultsbyPilot());
 }
 
 main();
