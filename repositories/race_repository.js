@@ -1,6 +1,5 @@
 export const raceRepository = () => {
   let laps = [];
-
   let lapsByPilot = [];
 
   return {
@@ -12,12 +11,12 @@ export const raceRepository = () => {
 
       return lap;
     },
-    saveLapToPilot: (lap, racerId, racerName) => {
+    saveLapToPilot: (lap, racerId, racerName, lineNumber) => {
       let currentRacerIds = Object.keys(lapsByPilot);
 
       delete lap.racerName;
       delete lap.racerId;
-
+      
       if (currentRacerIds.includes(racerId)) {
         lapsByPilot[racerId].laps.push(lap);
       } else {
@@ -35,6 +34,21 @@ export const raceRepository = () => {
     },
     getLapsByPilot: () => {
       return lapsByPilot;
+    },
+    getLap: (racerId, lapNumber) => {
+      let racerIds = Object.keys(lapsByPilot);
+      if (!racerIds.includes(racerId)) {
+        return null;
+      } else {
+        let laps = lapsByPilot[racerId].laps.filter(lap => {
+          return lap.lapNumber === lapNumber
+        });
+        if (laps.length > 0) {
+          return laps[0];
+        } else {
+          return null;
+        }
+      }
     }
   }
 }

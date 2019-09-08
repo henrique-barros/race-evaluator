@@ -1,13 +1,19 @@
 import { raceService } from "./services/race_service";
+import { fileService } from "./services/file_service";
 
 async function main() {
   const raceServiceInstance = raceService();
+  const fileServiceInstance = fileService();
 
   const filename = process.argv.slice(2)[0];
 
-  await raceServiceInstance.readAndParseLapsDataFromFile(filename);
+  try {
+    await raceServiceInstance.readAndParseLapsDataFromFile(filename);
+    console.log(raceServiceInstance.getRaceResultsbyPilot());
+  } catch (error) {
+    console.log(error.message)
+  }
 
-  console.log(raceServiceInstance.getRaceResultsbyPilot());
 }
 
 main();

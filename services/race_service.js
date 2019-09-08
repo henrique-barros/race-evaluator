@@ -7,28 +7,112 @@ export const raceService = () => {
   const raceRepositoryInstance = raceRepository();
   const fileServiceInstance = fileService();
 
-  const parseTimeCompleted = (timeCompletedString) => {
-    return moment(timeCompletedString, 'HH:mm:ss.SSS');
+  const errors = {
+    WrongFormatOfLapException: (lineNumber) => ({
+      type: "WrongFormatOfLap",
+      message: `The lap (line number ${lineNumber} of the file) should follow the example: "23:49:08.277 038 – F.MASSA 1	1:02.852 44,275", to match "Time, ID_Pilot - Name_Pilot, Lap number, Lap Ellapsed Time, Average speed of the lap", so don't forget to respect the spaces`
+    }),
+    WrongFormatOfLapEllapsedTime: (lineNumber) => ({
+      type: "WrongFormatOfLapEllapsedTime",
+      message: `The time ellapsed input of the lap (line number ${lineNumber} of the file) should conform the pattern: 00:00:00.000 and it must contain at least one second`
+    }),
+    WrongFormatOfTimeCompleted: (lineNumber) => ({
+      type: "WrongFormatOfTimeCompleted",
+      message: `The time completed of the lap (line number ${lineNumber} of the file) should conform the pattern: 00:00:00.000 with a 24 hour pattern`
+    }),
+    WrongFormatOfLapNumber: (lineNumber) => ({
+      type: "WrongFormatOfLapNumber",
+      message: `The lap number of the lap (line number ${lineNumber}) should be a positive non-zero number`
+    }),
+    WrongFormatOfAverageSpeed: (lineNumber) => ({
+      type: "WrongFormatOfAverageSpeed",
+      message: `The average speed of the lap (line number ${lineNumber}) should be a valid number`
+    }),
+    ThereIsAlreadyDataForThisLap: (lineNumber) => ({
+      type: "ThereIsAlreadyDataForThisLap",
+      message: `(Line number ${lineNumber}) there is already data for this lap number for this pilot`
+    }),
+    NotFoundRacerForAPreviousLap: (lineNumber) => ({
+      type: "NotFoundRacerForAPreviousLap",
+      message: `(Line number ${lineNumber}) The racer with this racerId did not complete a previous lap. The previous laps should appear first in the file`
+    })
   }
 
-  const parseLapEllapsedTime = (lapEllapsedTimeString) => {
-    return lapEllapsedTimeString.length === 10 ? 
-      moment.duration(`00:${lapEllapsedTimeString}`) :
-      moment.duration(`00:0${lapEllapsedTimeString}`);
+  const parseTimeCompleted = (timeCompletedString, lineNumber) => {
+    let pattern = /^([01]\d|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9]$/;
+    if (pattern.test(timeCompletedString)) {
+      return moment(timeCompletedString, 'HH:mm:ss.SSS');
+    } else {
+      throw (new errors.WrongFormatOfTimeCompleted(lineNumber))
+    }
   }
 
-  const saveLapBasedOnString = (lapString) => {
+  const parseLapEllapsedTime = (lapEllapsedTimeString, lineNumber) => {
+    let pattern = /^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9]$/;
+    switch (lapEllapsedTimeString.length) {
+      case 5:
+        lapEllapsedTimeString = `00:00:0${lapEllapsedTimeString}`;
+        break;
+      case 6:
+        lapEllapsedTimeString = `00:00:${lapEllapsedTimeString}`;
+        break;
+      case 8:
+        lapEllapsedTimeString = `00:0${lapEllapsedTimeString}`;
+        break;
+      case 9:
+        lapEllapsedTimeString = `00:${lapEllapsedTimeString}`;
+        break;
+      case 11:
+        lapEllapsedTimeString = `0${lapEllapsedTimeString}`;
+        break;
+    }
+    if (pattern.test(lapEllapsedTimeString)) {
+      return moment.duration(lapEllapsedTimeString);
+    } else {
+      throw (new errors.WrongFormatOfLapEllapsedTime(lineNumber));
+    }
+  }
 
+  const parseLapNumber = (lapNumber, lineNumber) => {
+    lapNumber = parseInt(lapNumber);
+    if (!isNaN(lapNumber) && isFinite(lapNumber) && lapNumber > 0)
+      return lapNumber;
+    else 
+      throw (new errors.WrongFormatOfLapNumber(lineNumber));
+  }
+
+  const parseAverageSpeed = (avgSpeed, lineNumber) => {
+    avgSpeed = parseFloat(avgSpeed.replace(',', '.'));
+    if (!isNaN(avgSpeed) && isFinite(avgSpeed) && avgSpeed > 0)
+      return avgSpeed;
+    else 
+      throw (new errors.WrongFormatOfAverageSpeed(lineNumber));
+  }
+
+  const saveLapToPilot = (lap, racerId, racerName, lineNumber) => {
+    if (raceRepositoryInstance.getLap(racerId, lap.lapNumber) !== null) {
+      throw (new errors.ThereIsAlreadyDataForThisLap(lineNumber));
+    } else if (lap.lapNumber !== 1 && raceRepositoryInstance.getLap(racerId, lap.lapNumber - 1) === null) {
+      throw (new errors.NotFoundRacerForAPreviousLap(lineNumber));
+    } else {
+      raceRepositoryInstance.saveLapToPilot(lap, racerId, racerName);
+    }
+  };
+  
+  const saveLapBasedOnString = (lapString, lineNumber) => {
     let lapStringArray = lapString.split(/\s+/);
-    let timeCompleted = parseTimeCompleted(lapStringArray[0]);
+    if (lapStringArray.length !== 7) {
+      throw(new errors.WrongFormatOfLapException(lineNumber));
+    }
+    let timeCompleted = parseTimeCompleted(lapStringArray[0], lineNumber);
     let racerId = lapStringArray[1];
     let racerName = lapStringArray[3];
-    let lapNumber = lapStringArray[4];
-    let lapEllapsedTime = parseLapEllapsedTime(lapStringArray[5]);
-    let avgSpeed = lapStringArray[6];
+    let lapNumber = parseLapNumber(lapStringArray[4], lineNumber);
+    let lapEllapsedTime = parseLapEllapsedTime(lapStringArray[5], lineNumber);
+    let avgSpeed = parseAverageSpeed(lapStringArray[6], lineNumber);
 
     let lap = raceRepositoryInstance.saveLap(timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed);
-    raceRepositoryInstance.saveLapToPilot(lap, lap.racerId, lap.racerName);
+    saveLapToPilot(lap, lap.racerId, lap.racerName, lineNumber);
   }
 
   const getAllLaps = () => {
@@ -36,8 +120,13 @@ export const raceService = () => {
   }
 
   const readAndParseLapsDataFromFile = async (filename) => {
-    let lapStrings = await fileServiceInstance.getFileLines(filename);
-    lapStrings.slice(1).map((lapString) => saveLapBasedOnString(lapString));
+    try {
+      let lapStrings = await fileServiceInstance.getFileLines(filename);
+      // Here we are passing i + 2 because the line number is 0 plus 1 (lines start with 1) plus the first line (header)
+      lapStrings.slice(1).map((lapString, i) => saveLapBasedOnString(lapString, i + 2));
+    } catch (exception) {
+      throw(exception);
+    }
   }
 
   const getStartOfTheRace = (timeCompleted, lapEllapsedTime) => {
