@@ -177,6 +177,13 @@ export const raceService = () => {
     getAllLaps,
     readAndParseLapsDataFromFile,
     getRaceResultsbyPilot,
-    getAllLapsByPilots: raceRepositoryInstance.getLapsByPilot
+    getAllLapsByPilots: raceRepositoryInstance.getLapsByPilot,
+    errors,
+    validation: {
+      parseTimeCompleted,
+      parseLapEllapsedTime,
+      parseAverageSpeed,
+      parseLapNumber,
+    }
   }
 }

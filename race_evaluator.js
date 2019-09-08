@@ -3,8 +3,6 @@ import { fileService } from "./services/file_service";
 
 async function main() {
   const raceServiceInstance = raceService();
-  const fileServiceInstance = fileService();
-
   const filename = process.argv.slice(2)[0];
 
   try {
