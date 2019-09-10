@@ -3,14 +3,16 @@ export const raceRepository = () => {
   let lapsByPilot = [];
 
   return {
-    saveLap: (timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed) => {
+    buildLap: (timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed) => {
       let lap = {
         timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed
       }
-      laps.push(lap);
 
       return lap;
     },
+
+
+
     saveLapToPilot: (lap, racerId, racerName, lineNumber) => {
       let currentRacerIds = Object.keys(lapsByPilot);
 
@@ -28,9 +30,6 @@ export const raceRepository = () => {
         };
       }
 
-    },
-    getLaps: () => {
-      return laps;
     },
     getLapsByPilot: () => {
       return lapsByPilot;

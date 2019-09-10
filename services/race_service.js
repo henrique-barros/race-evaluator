@@ -35,6 +35,10 @@ export const raceService = () => {
     NotFoundRacerForAPreviousLap: (lineNumber) => ({
       type: "NotFoundRacerForAPreviousLap",
       message: `(Line number ${lineNumber}) The racer with this racerId did not complete a previous lap. The previous laps should appear first in the file`
+    }),
+    NextLapBeforePreviousLap: (lineNumber) => ({
+      type: "NextLapBeforePreviousLap",
+      message: `(Line number ${lineNumber}) The previous lap is after the lap being inserted, this can't happen.`
     })
   }
 
@@ -90,10 +94,14 @@ export const raceService = () => {
   }
 
   const saveLapToPilot = (lap, racerId, racerName, lineNumber) => {
+    let previousLap = raceRepositoryInstance.getLap(racerId, lap.lapNumber - 1);
+
     if (raceRepositoryInstance.getLap(racerId, lap.lapNumber) !== null) {
       throw (new errors.ThereIsAlreadyDataForThisLap(lineNumber));
-    } else if (lap.lapNumber !== 1 && raceRepositoryInstance.getLap(racerId, lap.lapNumber - 1) === null) {
+    } else if (lap.lapNumber !== 1 && previousLap === null) {
       throw (new errors.NotFoundRacerForAPreviousLap(lineNumber));
+    } else if (previousLap && previousLap.timeCompleted.isSameOrAfter(lap.timeCompleted)) {
+      throw (new errors.NextLapBeforePreviousLap(lineNumber));
     } else {
       raceRepositoryInstance.saveLapToPilot(lap, racerId, racerName);
     }
@@ -111,12 +119,8 @@ export const raceService = () => {
     let lapEllapsedTime = parseLapEllapsedTime(lapStringArray[5], lineNumber);
     let avgSpeed = parseAverageSpeed(lapStringArray[6], lineNumber);
 
-    let lap = raceRepositoryInstance.saveLap(timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed);
+    let lap = raceRepositoryInstance.buildLap(timeCompleted, racerId, racerName, lapNumber, lapEllapsedTime, avgSpeed);
     saveLapToPilot(lap, lap.racerId, lap.racerName, lineNumber);
-  }
-
-  const getAllLaps = () => {
-    return raceRepositoryInstance.getLaps();
   }
 
   const readAndParseLapsDataFromFile = async (filename) => {
@@ -174,16 +178,20 @@ export const raceService = () => {
   };
 
   return {
-    getAllLaps,
     readAndParseLapsDataFromFile,
     getRaceResultsbyPilot,
     getAllLapsByPilots: raceRepositoryInstance.getLapsByPilot,
     errors,
-    validation: {
-      parseTimeCompleted,
-      parseLapEllapsedTime,
-      parseAverageSpeed,
-      parseLapNumber,
+    
+    // private methods exposed for testing purposes
+    private: {
+      validation: {
+        parseTimeCompleted,
+        parseLapEllapsedTime,
+        parseAverageSpeed,
+        parseLapNumber
+      },
+      saveLapToPilot
     }
   }
 }
